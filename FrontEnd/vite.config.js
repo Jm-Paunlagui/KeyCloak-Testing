@@ -1,5 +1,7 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
+import fs from "fs";
+import path from "path";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -7,6 +9,10 @@ export default defineConfig({
     server: {
         host: true,
         port: 5173,
+        https: {
+            key: fs.readFileSync(path.resolve(__dirname, "cert/key.pem")),
+            cert: fs.readFileSync(path.resolve(__dirname, "cert/cert.pem")),
+        },
     },
     base: "/", // Important for IIS deployment
     build: {

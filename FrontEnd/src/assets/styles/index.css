@@ -1,0 +1,504 @@
+@import "tailwindcss";
+@import "tailwindcss/utilities";
+
+@font-face {
+  font-family: 'Aumovio';
+  src: url('../fonts/AUMOVIOScreen-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Aumovio';
+  src: url('../fonts/AUMOVIOScreen-Italic.ttf') format('truetype');
+  font-weight: 400;
+  font-style: italic;
+}
+
+@font-face {
+  font-family: 'Aumovio';
+  src: url('../fonts/AUMOVIOScreen-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: 'Aumovio';
+  src: url('../fonts/AUMOVIOScreen-BoldItalic.ttf') format('truetype');
+  font-weight: 700;
+  font-style: italic;
+}
+
+/**
+ * Theme Customization Layer
+ */
+ :root {
+  --color-primary: #FF4208;
+  --color-secondary: #4827AF;
+ 
+  --color-grey: #f0f0f0;
+  --color-white: #FFFFFF;
+  --color-black: #000000;
+ 
+  --validation-red-default: #D82822;
+  --validation-red-light: #F0D3DC;
+  --validation-yellow-default: #FFD600;
+  --validation-yellow-light: #FFEE99;
+  --validation-green-default: #32CB70;
+  --validation-green-light: #ADEBC6;
+ 
+  --font-aumovio: 'Aumovio', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --font-aumovio-bold: 'Aumovio', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --font-aumovio-italic: 'Aumovio', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  --font-aumovio-bold-italic: 'Aumovio', ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+}
+
+/* Ensure the custom font variable is actually used globally */
+/* html, body {
+  font-family: var(--font-aumovio);
+} */
+
+/* Provide small CSS fallbacks for the utility classes used in JSX */
+.font-aumovio { font-family: var(--font-aumovio) !important; }
+.font-aumovio-bold { font-family: var(--font-aumovio-bold) !important; font-weight: 700;  }
+.font-aumovio-italic { font-family: var(--font-aumovio-italic) !important; font-style: italic; }
+.font-aumovio-bold-italic { font-family: var(--font-aumovio-bold-italic) !important; font-weight: 700; font-style: italic; }
+
+/* Theme Customization Layer */
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+/* Custom Animations */
+@keyframes wiggle {
+  0%, 40%, 80% {
+    transform: translateX(0.25rem);
+    color: rgb(239 68 68);         /* red-500 */
+    border-color: rgb(239 68 68);  /* red-500 */
+  }
+  20%, 60%, 100% {
+    transform: translateX(-0.25rem);
+    color: rgb(239 68 68);
+    border-color: rgb(239 68 68);
+  }
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translateY(-100vh) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in-up {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fade-out-up {
+  0% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+}
+
+@keyframes scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-right {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes bounce-slow {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-8px);
+  }
+  60% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes shake {
+  0%, 40%, 80%{
+    transform: translateX(0.10rem);
+    color: rgb(239 68 68);
+    border-color: rgb(239 68 68);
+  }
+  0%, 60%, 100%{
+    transform: translateX(-0.10rem);
+    color: rgb(239 68 68);
+    border-color: rgb(239 68 68);
+  }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+/* Animation Utilities */
+.animate-wiggle {
+  animation: wiggle 300ms ease-in-out;
+}
+
+.animate-confetti-fall {
+  animation: confetti-fall linear infinite;
+}
+
+.animate-fade-in-up {
+  animation: fade-in-up 0.6s ease-out forwards;
+  opacity: 0; /* Start hidden to prevent flash */
+}
+
+/* Closing animation complement to `animate-fade-in-up`.
+   Use this when you want the element to smoothly disappear by
+   fading and moving down (reverse of fade-in-up). */
+.animate-fade-out-up {
+  animation: fade-out-up 0.36s ease-in forwards;
+  /* ensure it starts visible when applied */
+  opacity: 1;
+}
+
+.animate-scale-in {
+  /* Run scale-in animation; do not set a persistent opacity here so
+     other runtime animations (e.g. animate-shake) which may override
+     the animation property won't leave the element permanently
+     invisible. The keyframes already handle the opacity transition. */
+  animation: scale-in 0.5s ease-out forwards;
+}
+
+.animate-scale-out {
+  animation: scale-in 0.4s ease-in reverse forwards;
+}
+
+.animate-slide-right {
+  animation: slide-right 0.5s ease-out forwards;
+  opacity: 0; /* Start hidden to prevent flash */
+}
+
+.animate-bounce-slow {
+  animation: bounce-slow 2s infinite;
+}
+
+.animate-shake {
+  animation: shake 250ms ease-in-out;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-in forwards;
+}
+
+.animate-slide-in {
+  animation: slide-in 0.4s ease-out forwards;
+  opacity: 0;
+}
+
+/* Performance optimizations */
+.will-change-transform {
+  will-change: transform;
+}
+
+.will-change-auto {
+  will-change: auto;
+}
+
+/* Smooth transitions for all interactive elements */
+.transition-smooth {
+  /* Avoid animating layout properties (width/height/margin) which causes reflow.
+     Prefer transform and opacity which are handled by the compositor for smooth animations. */
+  transition: transform 180ms ease-in-out, opacity 180ms ease-in-out, box-shadow 200ms ease-in-out;
+  will-change: transform, opacity, box-shadow;
+}
+
+/* Anti-flicker utilities */
+.backface-hidden {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.hardware-accel {
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
+}
+
+/* Prevent layout shift during loading */
+.prevent-flicker {
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+}
+
+/* Optimized button transitions */
+.btn-transition {
+  /* Targeted button transitions to avoid expensive layout changes */
+  transition: background-color 150ms ease-in-out, color 150ms ease-in-out, transform 150ms ease-in-out, box-shadow 150ms ease-in-out;
+  -webkit-tap-highlight-color: transparent;
+  will-change: transform, background-color, color, box-shadow;
+}
+
+/* Utility: use for containers that change page size / paginate large lists.
+   Animates only opacity and a subtle translate to reduce layout thrash. */
+.page-size-transition {
+  transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), opacity 180ms ease-in-out;
+  transform-origin: top center;
+  will-change: transform, opacity;
+}
+
+/* Utility for table/list rows when swapping pages: fade+translate for smooth feel */
+.row-transition {
+  transition: transform 200ms ease, opacity 180ms ease;
+  transform-origin: top left;
+  will-change: transform, opacity;
+}
+
+/* Helper class to temporarily disable transitions (can be toggled during large DOM updates or window resize via JS)
+   Example usage in JS: document.body.classList.add('transitions-disabled'); ...remove when done. */
+.transitions-disabled * {
+  transition: none !important;
+  animation: none !important;
+}
+
+/* Prevent content jump during animations */
+.stable-height {
+  min-height: 1.5rem; /* Adjust based on content */
+}
+
+.stable-width {
+  min-width: fit-content;
+}
+
+/* Custom scrollbar styling */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e0 #f7fafc;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f7fafc;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #cbd5e0;
+  border-radius: 3px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #a0aec0;
+}
+
+/* Section expand animation optimized for any content length */
+.section-expand {
+  transition: max-height 0.5s cubic-bezier(0.4, 0, 0.2, 1), 
+              opacity 0.3s ease-in-out;
+}
+
+/* Fast fade/translate helpers for quick paging animations */
+.fade-out {
+  opacity: 0.5 !important;
+  transform: translateY(6px) !important;
+}
+
+.fade-in {
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+/* Adjust default durations for page and row transitions to be snappier */
+.page-size-transition,
+.row-transition {
+  transition-duration: 40ms !important;
+  transition-timing-function: cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* Modal animations */
+@keyframes modalSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Progress Bar Animations */
+@keyframes progressGlow {
+  0% {
+    box-shadow: 0 0 5px rgba(147, 51, 234, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(147, 51, 234, 0.6),
+        0 0 30px rgba(234, 88, 12, 0.3);
+  }
+  100% {
+    box-shadow: 0 0 5px rgba(147, 51, 234, 0.3);
+  }
+}
+
+@keyframes progressPulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scaleY(0.95);
+  }
+}
+
+@keyframes progressWave {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes progressShimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+@keyframes completionCelebration {
+  0% {
+    transform: scale(1);
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+  }
+  25% {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(34, 197, 94, 0.8);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 0 35px rgba(34, 197, 94, 1);
+  }
+  75% {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px rgba(34, 197, 94, 0.8);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 0 15px rgba(34, 197, 94, 0.6);
+  }
+}
+
+/* Progress Bar Classes */
+.progress-bar {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-bar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.4) 50%,
+    transparent 100%
+  );
+  animation: progressShimmer 2s infinite;
+  z-index: 1;
+}
+
+.progress-completed {
+  background: linear-gradient(90deg, #22c55e 0%, #16a34a 100%) !important;
+  animation: completionCelebration 1.5s ease-in-out !important;
+}
+
+.animate-modalSlideUp {
+  animation: modalSlideUp 0.3s ease-out forwards;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE 10+ */
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
+}
