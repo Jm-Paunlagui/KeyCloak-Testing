@@ -3,7 +3,7 @@ import Keycloak from "keycloak-js";
 const keycloak = new Keycloak({
     url: "http://localhost:8080/",
     realm: "dev",
-    clientId: "public-client",
+    clientId: "react-client",
 });
 
 // Singleton init promise — guarantees init is only called once

@@ -2,14 +2,9 @@
     "realm": "dev",
     "auth-server-url": "http://localhost:8080/",
     "ssl-required": "external",
-    "resource": "public-client",
+    "resource": "react-client",
+    "public-client": true,
     "verify-token-audience": true,
-    "credentials": {
-        "secret": "KvZeHalsuMGObe80gtGFe2Rr7NDREXS3"
-    },
     "use-resource-role-mappings": true,
-    "confidential-port": 0,
-    "policy-enforcer": {
-        "credentials": {}
-    }
+    "confidential-port": 0
 }

@@ -19,7 +19,11 @@ app.use(compression());
 // CORS — allow the React dev server
 app.use(
     cors({
-        origin: ["https://localhost:5173", "https://192.168.0.193:5173"],
+        origin: [
+            "https://localhost:5173",
+            "https://192.168.0.193:5173",
+            "https://localhost:5173/",
+        ],
         credentials: true,
     }),
 );
@@ -30,7 +34,7 @@ app.use(express.json());
 // Session (required by keycloak-connect)
 app.use(
     session({
-        secret: process.env.SESSION_SECRET || "keycloak-testing-secret",
+        secret: "T1zwgG701J5nPoQBflSbKDSLI8eSk13U",
         resave: false,
         saveUninitialized: false,
         store: memoryStore,

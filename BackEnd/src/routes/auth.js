@@ -5,8 +5,7 @@ const { keycloak } = require("../config/keycloak");
 
 // Protected route — returns the decoded access token claims
 router.get("/me", keycloak.protect(), (req, res) => {
-    const tokenContent = req.kauth.grant.access_token.content;
-    res.json(tokenContent);
+    res.json(req.kauth.grant.access_token.content);
 });
 
 // Protected route — proxies to Keycloak's userinfo endpoint for full profile

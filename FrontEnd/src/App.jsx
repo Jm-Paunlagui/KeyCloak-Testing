@@ -66,16 +66,9 @@ function App() {
     }, []);
 
     const handleLogin = () => {
-        try {
-            keycloak.login();
-        } catch {
-            // Fallback: redirect manually to Keycloak auth endpoint
-            const redirectUri = encodeURIComponent(window.location.origin);
-            window.location.href =
-                `https://localhost:8080/realms/dev/protocol/openid-connect/auth` +
-                `?client_id=public-client&redirect_uri=${redirectUri}` +
-                `&response_type=code&scope=openid`;
-        }
+        keycloak.login().catch((err) => {
+            console.error("Keycloak login failed", err);
+        });
     };
 
     const handleLogout = () => {
