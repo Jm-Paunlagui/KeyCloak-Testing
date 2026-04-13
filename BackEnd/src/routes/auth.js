@@ -1,24 +1,19 @@
 const express = require("express");
 const axios = require("axios");
 const router = express.Router();
-const { keycloak } = require("../config/keycloak");
+const { requireAuth } = require("../config/keycloak");
+
+const keycloakConfig = require("../../keycloak.json");
 
 // Protected route — returns the decoded access token claims
-router.get("/me", keycloak.protect(), (req, res) => {
-    try {
-        const tokenContent = req.kauth.grant.access_token.content;
-        res.json(tokenContent);
-    } catch (error) {
-        console.error("Failed to decode token:", error.message);
-        res.status(500).json({ error: "Failed to decode access token" });
-    }
+router.get("/me", requireAuth, (req, res) => {
+    res.json(req.tokenPayload);
 });
 
 // Protected route — proxies to Keycloak's userinfo endpoint for full profile
-router.get("/userinfo", keycloak.protect(), async (req, res) => {
+router.get("/userinfo", requireAuth, async (req, res) => {
     try {
-        const accessToken = req.kauth.grant.access_token.token;
-        const keycloakConfig = require("../../keycloak.json");
+        const accessToken = req.headers.authorization.slice(7);
         const userInfoUrl = `${keycloakConfig["auth-server-url"]}realms/${keycloakConfig.realm}/protocol/openid-connect/userinfo`;
 
         const response = await axios.get(userInfoUrl, {
@@ -29,7 +24,8 @@ router.get("/userinfo", keycloak.protect(), async (req, res) => {
     } catch (error) {
         console.error("Failed to fetch userinfo:", error.message);
         res.status(502).json({
-            error: "Failed to fetch user info from Keycloak",
+            error: "Bad Gateway",
+            message: "Failed to fetch user info from Keycloak",
         });
     }
 });

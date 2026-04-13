@@ -14,7 +14,7 @@ import {
 } from "./assets/styles/pre-set-styles.jsx";
 import keycloak, { initKeycloak } from "./services/keycloak";
 
-const API_BASE = "https://localhost:3000/api";
+const API_BASE = import.meta.env.VITE_CLIENT_BASE_URL;
 
 function App() {
     const [authenticated, setAuthenticated] = useState(false);
@@ -44,6 +44,7 @@ function App() {
             });
     }, []);
 
+    // Optional, 
     const loadUserData = useCallback(async () => {
         try {
             // Token claims
