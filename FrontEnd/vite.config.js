@@ -12,7 +12,7 @@ import { defineConfig } from "vite";
  */
 
 function resolveHttpsConfig() {
-    const isProd = true; // Force production mode for Vite to match backend SSL setup
+    const isProd = false; // Force production mode for Vite to match backend SSL setup
 
     try {
         if (isProd) {

@@ -1,9 +1,9 @@
 import Keycloak from "keycloak-js";
 
 const keycloak = new Keycloak({
-    url: "http://localhost:8080/",
-    realm: "dev",
-    clientId: "react-client",
+    url: "https://keycloak.cb.prod.e2c.int.automotive-wan.com/auth/",
+    realm: "default",
+    clientId: "reactjs",
 });
 
 // Singleton init promise — guarantees init is only called once
