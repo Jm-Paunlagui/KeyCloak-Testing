@@ -16,6 +16,7 @@ const logger = {
         console.debug(`[DEBUG] ${new Date().toISOString()} - ${msg}`),
 };
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const helmet = require("helmet");
 const compression = require("compression");
 const authRoutes = require("./src/routes/auth");
@@ -112,6 +113,9 @@ const corsOptions = {
 
 // CORS — allow the React dev server
 app.use(cors(corsOptions));
+
+// Cookie parsing (needed for backend auth cookie flow)
+app.use(cookieParser());
 
 // Body parsing
 app.use(express.json());
