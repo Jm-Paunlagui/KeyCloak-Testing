@@ -57,35 +57,34 @@ const { requireAuth } = require("../config/keycloak");
  * Keycloak realm configuration loaded from keycloak.json.
  *
  * @type {{ realm: string, "auth-server-url": string, resource: string }}
- *
- * @example
- * {
- *   "realm": "dev",
- *   "auth-server-url": "http://localhost:8080/",
- *   "resource": "react-client"
- * }
  */
 const keycloakConfig = require("../../keycloak.json");
 
 /**
  * Base URL for every Keycloak OpenID-Connect endpoint in the configured realm.
- *
- * All the important Keycloak URLs (/auth, /token, /userinfo, /logout) live
- * under this path, so we build it once and reuse it everywhere below.
- *
- * @example "http://localhost:8080/realms/dev/protocol/openid-connect"
- *
  * @constant {string}
  */
 const KC_BASE = `${keycloakConfig["auth-server-url"]}realms/${keycloakConfig.realm}/protocol/openid-connect`;
 
 /**
- * The OAuth2 client ID registered in Keycloak (the "resource" field in keycloak.json).
- * Sent with every token-related request so Keycloak knows which application is asking.
- *
+ * The OAuth2 client ID registered in Keycloak.
  * @constant {string}
  */
 const CLIENT_ID = keycloakConfig.resource;
+
+/**
+ * Frontend origin — where to redirect after callback.
+ * Falls back to env CLIENT_BASE_URL, or builds from request if not set.
+ */
+const FRONTEND_URL = process.env.CLIENT_BASE_URL;
+
+// Cookie options — httpOnly so JavaScript can't steal tokens
+const COOKIE_OPTIONS = {
+    httpOnly: true,
+    secure: true,
+    sameSite: "none", // cross-origin between frontend and backend
+    path: "/",
+};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // OAuth2 Authorization Code Flow
@@ -140,15 +139,7 @@ const CLIENT_ID = keycloakConfig.resource;
  * // window.location.href = login_url;             // send the browser to Keycloak
  */
 router.get("/login", (req, res) => {
-    // Allow the caller to override where Keycloak should send the user back
-    // after a successful login. Falls back to this server's /callback endpoint.
-    const redirectUri =
-        req.query.redirect_uri ||
-        `${req.protocol}://${req.get("host")}/api/callback`;
-
-    // Cryptographically random state string — 16 bytes = 32 hex chars.
-    // The client stores this and validates it when /callback fires to confirm
-    // the response genuinely originated from our /login request (anti-CSRF).
+    const redirectUri = `${req.protocol}://${req.get("host")}/api/callback`;
     const state = crypto.randomBytes(16).toString("hex");
 
     const params = new URLSearchParams({
@@ -167,67 +158,10 @@ router.get("/login", (req, res) => {
 });
 
 // ─── GET /api/callback ────────────────────────────────────────────────────────
-/**
- * Step 2 of the OAuth2 Authorization Code Flow.
- * Exchanges the short-lived authorization code for real tokens.
- *
- * After the user logs in on Keycloak's page, Keycloak redirects the browser
- * back here with a one-time `code` in the query string. That code is useless
- * on its own — it must be swapped server-to-server for actual tokens via
- * Keycloak's /token endpoint.
- *
- * Why a code instead of tokens directly?
- *   The code travels through the browser URL bar (visible, logged in history).
- *   Tokens are far more sensitive, so we keep the final exchange server-side
- *   where the browser never sees the raw tokens.
- *
- * Keycloak returns on success:
- *  - `access_token`       — short-lived JWT (minutes). Send as Bearer on every
- *                           protected API call.
- *  - `refresh_token`      — longer-lived opaque token (hours/days). Feed to
- *                           /refresh to get new access tokens without re-login.
- *  - `id_token`           — JWT with basic identity claims (name, email, etc.).
- *  - `expires_in`         — seconds until the access token expires.
- *  - `refresh_expires_in` — seconds until the refresh token expires.
- *  - `token_type`         — always "Bearer".
- *
- * @route   GET /api/callback
- * @access  Public — called automatically by Keycloak's redirect; no Bearer token needed.
- *
- * @param {import('express').Request}  req                     - Incoming request.
- * @param {string}                     req.query.code          - One-time authorization code from Keycloak. Required.
- * @param {string}                    [req.query.redirect_uri] - Must exactly match the URI sent in /login;
- *   defaults to this endpoint's own URL if omitted.
- * @param {import('express').Response} res                     - Responds with the full Keycloak token set.
- *
- * @returns {Promise<void>}
- *
- * @example
- * // Keycloak redirects here automatically — the client just needs to handle it:
- * GET /api/callback?code=eyJhbGci...&state=a3f9c2b1...&session_state=abc123
- *
- * // Response 200 OK
- * {
- *   "access_token":       "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
- *   "expires_in":         300,
- *   "refresh_expires_in": 1800,
- *   "refresh_token":      "eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIi...",
- *   "token_type":         "Bearer",
- *   "id_token":           "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
- *   "scope":              "openid profile email"
- * }
- *
- * // Response 400 Bad Request (code missing)
- * { "error": "Bad Request", "message": "Missing 'code' query parameter" }
- *
- * // Response 400 from Keycloak (code already used or expired — codes last ~60s)
- * { "error": "Token exchange failed", "details": { "error": "invalid_grant", ... } }
- *
- * // Response 502 Bad Gateway (Keycloak is unreachable)
- * { "error": "Token exchange failed", "details": "..." }
- */
+// Keycloak redirects here after login. Exchanges the code for tokens,
+// stores them in httpOnly cookies, then redirects back to the frontend.
 router.get("/callback", async (req, res) => {
-    const { code, redirect_uri } = req.query;
+    const { code } = req.query;
 
     if (!code) {
         return res.status(400).json({
@@ -236,16 +170,9 @@ router.get("/callback", async (req, res) => {
         });
     }
 
-    // The redirect_uri sent here MUST exactly match the one used in /login —
-    // Keycloak enforces this as a security check. If the caller does not pass
-    // it explicitly, reconstruct the default value that /login would have used.
-    const callbackUri =
-        redirect_uri || `${req.protocol}://${req.get("host")}/api/callback`;
+    const callbackUri = `${req.protocol}://${req.get("host")}/api/callback`;
 
     try {
-        // Server-to-server POST to Keycloak's /token endpoint.
-        // Keycloak checks: is the code valid? unused? not expired (~60s window)?
-        // If yes, it invalidates the code and returns the token set.
         const tokenResponse = await axios.post(
             `${KC_BASE}/token`,
             new URLSearchParams({
@@ -256,24 +183,169 @@ router.get("/callback", async (req, res) => {
             }),
             {
                 headers: {
-                    // Keycloak's /token endpoint requires form-encoded body, NOT JSON.
                     "Content-Type": "application/x-www-form-urlencoded",
                 },
             },
         );
 
-        res.json(tokenResponse.data);
+        const { access_token, refresh_token, expires_in, refresh_expires_in } =
+            tokenResponse.data;
+
+        // Store tokens in secure httpOnly cookies — JS can't touch these
+        res.cookie("access_token", access_token, {
+            ...COOKIE_OPTIONS,
+            maxAge: expires_in * 1000,
+        });
+        res.cookie("refresh_token", refresh_token, {
+            ...COOKIE_OPTIONS,
+            maxAge: refresh_expires_in * 1000,
+        });
+
+        // Redirect back to frontend with a flag so it knows to check the session
+        const frontendUrl =
+            FRONTEND_URL ||
+            req.headers.referer ||
+            `${req.protocol}://${req.get("host")}`;
+        res.redirect(`${frontendUrl}?backend_auth=success`);
     } catch (error) {
-        // Preserve Keycloak's own HTTP status (e.g. 400 for an expired code)
-        // rather than always sending 500, so clients can react appropriately.
-        const status = error.response?.status || 502;
         const detail = error.response?.data || error.message;
         console.error("Token exchange failed:", detail);
-        res.status(status).json({
-            error: "Token exchange failed",
-            details: detail,
-        });
+        const frontendUrl =
+            FRONTEND_URL ||
+            req.headers.referer ||
+            `${req.protocol}://${req.get("host")}`;
+        res.redirect(`${frontendUrl}?backend_auth=error`);
     }
+});
+
+// ─── GET /api/session ─────────────────────────────────────────────────────────
+// Returns the current user's data from the cookie-stored tokens.
+// The frontend calls this after redirect to get the user info.
+router.get("/session", async (req, res) => {
+    const accessToken = req.cookies?.access_token;
+    const refreshToken = req.cookies?.refresh_token;
+
+    if (!accessToken) {
+        return res.status(401).json({ authenticated: false });
+    }
+
+    try {
+        // Decode the token to get claims (the requireAuth middleware validates
+        // against Keycloak's JWKS, but here we also want to use the token to
+        // fetch userinfo — so we validate by calling Keycloak's userinfo endpoint)
+        const userInfoUrl = `${KC_BASE}/userinfo`;
+
+        const response = await axios.get(userInfoUrl, {
+            headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        // Also decode token for roles/claims
+        const base64Payload = accessToken.split(".")[1];
+        const tokenPayload = JSON.parse(
+            Buffer.from(base64Payload, "base64").toString("utf-8"),
+        );
+
+        res.json({
+            authenticated: true,
+            userInfo: response.data,
+            tokenClaims: tokenPayload,
+            hasRefreshToken: !!refreshToken,
+        });
+    } catch (error) {
+        // Token might be expired — try to refresh
+        if (refreshToken && error.response?.status === 401) {
+            try {
+                const refreshResponse = await axios.post(
+                    `${KC_BASE}/token`,
+                    new URLSearchParams({
+                        grant_type: "refresh_token",
+                        client_id: CLIENT_ID,
+                        refresh_token: refreshToken,
+                    }),
+                    {
+                        headers: {
+                            "Content-Type": "application/x-www-form-urlencoded",
+                        },
+                    },
+                );
+
+                const {
+                    access_token,
+                    refresh_token: newRefresh,
+                    expires_in,
+                    refresh_expires_in,
+                } = refreshResponse.data;
+
+                // Update cookies
+                res.cookie("access_token", access_token, {
+                    ...COOKIE_OPTIONS,
+                    maxAge: expires_in * 1000,
+                });
+                res.cookie("refresh_token", newRefresh, {
+                    ...COOKIE_OPTIONS,
+                    maxAge: refresh_expires_in * 1000,
+                });
+
+                // Retry userinfo with fresh token
+                const retryResponse = await axios.get(`${KC_BASE}/userinfo`, {
+                    headers: { Authorization: `Bearer ${access_token}` },
+                });
+
+                const base64Payload = access_token.split(".")[1];
+                const tokenPayload = JSON.parse(
+                    Buffer.from(base64Payload, "base64").toString("utf-8"),
+                );
+
+                return res.json({
+                    authenticated: true,
+                    userInfo: retryResponse.data,
+                    tokenClaims: tokenPayload,
+                    hasRefreshToken: true,
+                });
+            } catch (refreshErr) {
+                // Refresh also failed — session is truly dead
+                res.clearCookie("access_token", COOKIE_OPTIONS);
+                res.clearCookie("refresh_token", COOKIE_OPTIONS);
+                return res.status(401).json({ authenticated: false });
+            }
+        }
+
+        res.clearCookie("access_token", COOKIE_OPTIONS);
+        res.clearCookie("refresh_token", COOKIE_OPTIONS);
+        return res.status(401).json({ authenticated: false });
+    }
+});
+
+// ─── POST /api/backend-logout ─────────────────────────────────────────────────
+// Logs out the cookie-based session — revokes tokens at Keycloak and clears cookies.
+router.post("/backend-logout", async (req, res) => {
+    const refreshToken = req.cookies?.refresh_token;
+
+    if (refreshToken) {
+        try {
+            await axios.post(
+                `${KC_BASE}/logout`,
+                new URLSearchParams({
+                    client_id: CLIENT_ID,
+                    refresh_token: refreshToken,
+                }),
+                {
+                    headers: {
+                        "Content-Type": "application/x-www-form-urlencoded",
+                    },
+                },
+            );
+        } catch (err) {
+            console.error(
+                "Keycloak logout failed:",
+                err.response?.data || err.message,
+            );
+        }
+    }
+
+    res.clearCookie("access_token", COOKIE_OPTIONS);
+    res.clearCookie("refresh_token", COOKIE_OPTIONS);
+    res.json({ message: "Logged out successfully" });
 });
 
 // ─── POST /api/refresh ────────────────────────────────────────────────────────
@@ -351,7 +423,9 @@ router.post("/refresh", async (req, res) => {
                 refresh_token,
             }),
             {
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
             },
         );
 
@@ -432,7 +506,9 @@ router.post("/logout", async (req, res) => {
                 refresh_token,
             }),
             {
-                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
             },
         );
 
