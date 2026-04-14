@@ -266,9 +266,9 @@ function App() {
                     </div>
 
                     {activeTab === "profile" && (
-                        <JsonCard
-                            title="Keycloak UserInfo (via Backend)"
-                            data={userInfo}
+                        <BackendProfileTab
+                            userInfo={userInfo}
+                            claims={claims}
                         />
                     )}
                     {activeTab === "token" && (
@@ -528,6 +528,88 @@ function JsonCard({ title, data }) {
             <pre className="px-6 py-4 text-xs text-[#000000]/75 overflow-x-auto font-mono leading-relaxed">
                 {JSON.stringify(data, null, 2)}
             </pre>
+        </div>
+    );
+}
+
+// ─── Backend Profile Tab (matches ProfileTab layout) ────────────────────────
+function BackendProfileTab({ userInfo, claims }) {
+    const fields = [
+        {
+            label: "Username",
+            value: userInfo?.preferred_username || claims?.preferred_username,
+        },
+        { label: "Email", value: userInfo?.email || claims?.email },
+        {
+            label: "Email Verified",
+            value:
+                (userInfo?.email_verified ?? claims?.email_verified)
+                    ? "Yes"
+                    : "No",
+        },
+        {
+            label: "First Name",
+            value: userInfo?.given_name || claims?.given_name,
+        },
+        {
+            label: "Last Name",
+            value: userInfo?.family_name || claims?.family_name,
+        },
+        { label: "Full Name", value: userInfo?.name || claims?.name },
+        { label: "User ID (sub)", value: userInfo?.sub || claims?.sub },
+        { label: "Realm", value: claims?.iss?.split("/").pop() },
+        { label: "Session ID", value: claims?.sid },
+        {
+            label: "Token Issued At",
+            value: claims?.iat
+                ? new Date(claims.iat * 1000).toLocaleString()
+                : "-",
+        },
+        {
+            label: "Token Expires At",
+            value: claims?.exp
+                ? new Date(claims.exp * 1000).toLocaleString()
+                : "-",
+        },
+        {
+            label: "Auth Time",
+            value: claims?.auth_time
+                ? new Date(claims.auth_time * 1000).toLocaleString()
+                : "-",
+        },
+        {
+            label: "Allowed Origins",
+            value: claims?.["allowed-origins"]?.join(", ") || "-",
+        },
+        { label: "Scope", value: claims?.scope },
+    ];
+
+    return (
+        <div
+            className={`${STANDARD_BORDER} bg-white rounded-xl overflow-hidden`}
+        >
+            <div className="px-6 py-4 border-b border-[#787878]/20">
+                <h3 className={`${TITLE_COLOR_TEXT} text-lg`}>
+                    User Profile (via Backend)
+                </h3>
+            </div>
+            <div className="divide-y divide-[#787878]/10">
+                {fields.map((f, i) => (
+                    <div
+                        key={i}
+                        className="px-6 py-3 flex flex-col sm:flex-row sm:items-center gap-1"
+                    >
+                        <span className="font-aumovio-bold text-sm text-[#000000]/60 sm:w-48 shrink-0">
+                            {f.label}
+                        </span>
+                        <span
+                            className={`${BASE_COLOR_TEXT} text-sm break-all`}
+                        >
+                            {f.value || "-"}
+                        </span>
+                    </div>
+                ))}
+            </div>
         </div>
     );
 }
