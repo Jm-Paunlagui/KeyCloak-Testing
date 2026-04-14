@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const axios = require("axios");
+const axios = require("./keycloakAxios");
 const { createPublicKey } = require("crypto");
 
 const keycloakConfig = require("../../keycloak.json");

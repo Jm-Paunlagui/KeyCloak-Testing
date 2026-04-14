@@ -1,5 +1,5 @@
 const express = require("express");
-const axios = require("axios");
+const axios = require("../config/keycloakAxios");
 const crypto = require("crypto");
 const router = express.Router();
 const { requireAuth } = require("../config/keycloak");
